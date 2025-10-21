@@ -15,7 +15,7 @@ public class EventoDAO {
         String sqlEvento = "INSERT INTO evento(nome,cidade,publico,ong_id) VALUES (?,?,?,?)";
         String sqlCap = "INSERT INTO evento_capacidades(evento_id,capacidade) VALUES (?,?)";
 
-        try (Connection conn = DBConnection.getInstance().getConnection();
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmtEvento = conn.prepareStatement(sqlEvento, Statement.RETURN_GENERATED_KEYS)) {
 
             int ongId = getOngId(e.getOng(), conn);
@@ -42,8 +42,8 @@ public class EventoDAO {
                     }
                 }
             }
-
             return true;
+
         } catch (SQLException ex) {
             System.out.println("Erro evento: " + ex.getMessage());
             return false;
@@ -52,12 +52,13 @@ public class EventoDAO {
 
     public List<Evento> listarEventos() {
         List<Evento> eventos = new ArrayList<>();
-        String sql = "SELECT e.id, e.nome, e.cidade, e.publico, u.nome as ong_nome, u.email as ong_email, u.senha as ong_senha " +
+        String sql = "SELECT e.id AS evento_id, e.nome, e.cidade, e.publico, " +
+                "u.nome AS ong_nome, u.email AS ong_email, u.senha AS ong_senha " +
                 "FROM evento e " +
                 "JOIN ong o ON e.ong_id = o.id " +
                 "JOIN usuario u ON o.usuario_id = u.id";
 
-        try (Connection conn = DBConnection.getInstance().getConnection();
+        try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -76,12 +77,11 @@ public class EventoDAO {
         } catch (SQLException ex) {
             System.out.println("Erro listar eventos: " + ex.getMessage());
         }
-
         return eventos;
     }
 
     private int getOngId(Ong ong, Connection conn) throws SQLException {
-        String sql = "SELECT id FROM ong o JOIN usuario u ON o.usuario_id=u.id WHERE u.email=?";
+        String sql = "SELECT o.id FROM ong o JOIN usuario u ON o.usuario_id=u.id WHERE u.email=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, ong.getEmail());
             try (ResultSet rs = stmt.executeQuery()) {
@@ -94,8 +94,7 @@ public class EventoDAO {
     public void inscreverVoluntario(Evento e, Voluntario v) {
         String sql = "INSERT INTO evento_voluntario(evento_id, voluntario_id) VALUES (?, ?)";
 
-        try (Connection conn = DBConnection.getInstance().getConnection()) {
-
+        try (Connection conn = DBConnection.getConnection()) {
             int eventoId = getEventoId(e, conn);
             int voluntarioId = getVoluntarioId(v, conn);
 
@@ -117,10 +116,11 @@ public class EventoDAO {
 
     private int getEventoId(Evento e, Connection conn) throws SQLException {
         String sql = "SELECT id FROM evento WHERE nome=?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql);
-             ResultSet rs = stmt.executeQuery()) {
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, e.getNome());
-            if (rs.next()) return rs.getInt("id");
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("id");
+            }
         }
         return -1;
     }
