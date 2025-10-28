@@ -1,16 +1,21 @@
 package org.example.dao;
 
-import org.example.db.DBConnection;
-import org.example.model.Voluntario;
-import org.example.model.Ong;
-import org.example.model.Usuario;
-
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.example.db.DBConnection;
+import org.example.model.Ong;
+import org.example.model.Usuario;
+import org.example.model.Voluntario;
+
 public class UsuarioDAO {
 
+    // -------------------- CADASTRAR VOLUNTÁRIO --------------------
     public boolean cadastrarVoluntario(Voluntario v) {
         String sqlUser = "INSERT INTO usuario(nome,email,senha,tipo) VALUES (?,?,?,?)";
         String sqlHabilidade = "INSERT INTO voluntario_habilidades(voluntario_id, habilidade) VALUES (?,?)";
@@ -44,6 +49,7 @@ public class UsuarioDAO {
         }
     }
 
+    // -------------------- CADASTRAR ONG --------------------
     public boolean cadastrarOng(Ong o) {
         String sqlUser = "INSERT INTO usuario(nome,email,senha,tipo) VALUES (?,?,?,?)";
         String sqlOng = "INSERT INTO ong(usuario_id) VALUES (?)";
@@ -74,6 +80,7 @@ public class UsuarioDAO {
         }
     }
 
+    // -------------------- LOGIN --------------------
     public Usuario login(String email, String senha) {
         String sql = "SELECT nome, tipo FROM usuario WHERE email=? AND senha=?";
 
@@ -99,22 +106,64 @@ public class UsuarioDAO {
         return null;
     }
 
+    // -------------------- LISTAR ONGs --------------------
     public List<Ong> listarOngs() {
         List<Ong> ongs = new ArrayList<>();
-        String sql = "SELECT u.nome,u.email,u.senha FROM usuario u JOIN ong o ON u.id=o.usuario_id";
+        String sql = """
+            SELECT o.id AS ong_id, u.nome, u.email, u.senha
+            FROM ong o
+            JOIN usuario u ON o.usuario_id = u.id
+            WHERE u.tipo = 'ong'
+        """;
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                ongs.add(new Ong(rs.getString("nome"), rs.getString("email"), rs.getString("senha")));
+                Ong ong = new Ong(
+                    rs.getString("nome"),
+                    rs.getString("email"),
+                    rs.getString("senha")
+                );
+                ong.setId(rs.getInt("ong_id"));
+                ongs.add(ong);
             }
 
         } catch (SQLException e) {
-            System.out.println("Erro listar ONGs: " + e.getMessage());
+            System.out.println("Erro ao listar ONGs: " + e.getMessage());
         }
 
         return ongs;
     }
+
+    // -------------------- LISTAR VOLUNTÁRIOS --------------------
+    public List<Voluntario> listarVoluntarios() {
+        List<Voluntario> voluntarios = new ArrayList<>();
+    
+        String sql = "SELECT id, nome, email, senha FROM usuario WHERE tipo = 'voluntario'";
+    
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+    
+            while (rs.next()) {
+                Voluntario v = new Voluntario(
+                    rs.getString("nome"),
+                    rs.getString("email"),
+                    rs.getString("senha")
+                );
+                v.setId(rs.getInt("id")); // usa o id direto da tabela usuario
+                voluntarios.add(v);
+            }
+    
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    
+        return voluntarios;
+    }
+    
+
+
 }

@@ -1,13 +1,17 @@
 package org.example.dao;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.example.db.DBConnection;
 import org.example.model.Evento;
 import org.example.model.Ong;
 import org.example.model.Voluntario;
-
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class EventoDAO {
 
@@ -50,20 +54,26 @@ public class EventoDAO {
         }
     }
 
+    // -------------------- LISTAR EVENTOS --------------------
     public List<Evento> listarEventos() {
         List<Evento> eventos = new ArrayList<>();
         String sql = "SELECT e.id AS evento_id, e.nome, e.cidade, e.publico, " +
-                "u.nome AS ong_nome, u.email AS ong_email, u.senha AS ong_senha " +
-                "FROM evento e " +
-                "JOIN ong o ON e.ong_id = o.id " +
-                "JOIN usuario u ON o.usuario_id = u.id";
+                     "u.nome AS ong_nome, u.email AS ong_email, u.senha AS ong_senha " +
+                     "FROM evento e " +
+                     "JOIN ong o ON e.ong_id = o.id " +
+                     "JOIN usuario u ON o.usuario_id = u.id";
 
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                Ong ong = new Ong(rs.getString("ong_nome"), rs.getString("ong_email"), rs.getString("ong_senha"));
+                Ong ong = new Ong(
+                        rs.getString("ong_nome"),
+                        rs.getString("ong_email"),
+                        rs.getString("ong_senha")
+                );
+
                 Evento e = new Evento(
                         rs.getString("nome"),
                         rs.getString("cidade"),
@@ -77,20 +87,51 @@ public class EventoDAO {
         } catch (SQLException ex) {
             System.out.println("Erro listar eventos: " + ex.getMessage());
         }
+
         return eventos;
     }
 
-    private int getOngId(Ong ong, Connection conn) throws SQLException {
-        String sql = "SELECT o.id FROM ong o JOIN usuario u ON o.usuario_id=u.id WHERE u.email=?";
-        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, ong.getEmail());
+    // -------------------- LISTAR EVENTOS POR CIDADE --------------------
+    public List<Evento> listarEventosPorCidade(String cidade) {
+        List<Evento> eventos = new ArrayList<>();
+        String sql = "SELECT e.id AS evento_id, e.nome, e.cidade, e.publico, " +
+                     "u.nome AS ong_nome, u.email AS ong_email, u.senha AS ong_senha " +
+                     "FROM evento e " +
+                     "JOIN ong o ON e.ong_id = o.id " +
+                     "JOIN usuario u ON o.usuario_id = u.id " +
+                     "WHERE e.cidade = ?";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, cidade);
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) return rs.getInt("id");
+                while (rs.next()) {
+                    Ong ong = new Ong(
+                            rs.getString("ong_nome"),
+                            rs.getString("ong_email"),
+                            rs.getString("ong_senha")
+                    );
+
+                    Evento e = new Evento(
+                            rs.getString("nome"),
+                            rs.getString("cidade"),
+                            rs.getString("publico"),
+                            new ArrayList<>(),
+                            ong
+                    );
+                    eventos.add(e);
+                }
             }
+
+        } catch (SQLException ex) {
+            System.out.println("Erro listar eventos por cidade: " + ex.getMessage());
         }
-        return -1;
+
+        return eventos;
     }
 
+    // -------------------- INSCRIÇÃO --------------------
     public void inscreverVoluntario(Evento e, Voluntario v) {
         String sql = "INSERT INTO evento_voluntario(evento_id, voluntario_id) VALUES (?, ?)";
 
@@ -112,6 +153,18 @@ public class EventoDAO {
         } catch (SQLException ex) {
             System.out.println("Erro inscrição: " + ex.getMessage());
         }
+    }
+
+    // -------------------- AUXILIARES --------------------
+    private int getOngId(Ong ong, Connection conn) throws SQLException {
+        String sql = "SELECT o.id FROM ong o JOIN usuario u ON o.usuario_id=u.id WHERE u.email=?";
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, ong.getEmail());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) return rs.getInt("id");
+            }
+        }
+        return -1;
     }
 
     private int getEventoId(Evento e, Connection conn) throws SQLException {
