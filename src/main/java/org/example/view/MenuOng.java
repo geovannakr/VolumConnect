@@ -42,25 +42,38 @@ public class MenuOng {
     private void criarEvento() {
         System.out.print("\nDeseja importar um evento externo? (S/N): ");
         String opcao = sc.nextLine().trim();
-
+    
         if (opcao.equalsIgnoreCase("S")) {
-
-            Evento eventoAdaptado = new Evento("Limpeza de Praia", "Jaraguá", "Voluntários", new ArrayList<>(), ong);
-            Evento eventoAdaptado2 = new Evento("Organização da Horta", "Blumenau", "Voluntários", new ArrayList<>(), ong);
-            Evento eventoAdaptado3 = new Evento("Plantio de Árvores", "Joinville", "Voluntários", new ArrayList<>(), ong);
-            Evento eventoAdaptado4 = new Evento("Limpeza de Canil", "Massaranduba", "Voluntários", new ArrayList<>(), ong);
-
-            if (eventDAO.cadastrarEvento(eventoAdaptado)) {
-                System.out.println("\nEvento externo importado com sucesso!\n");
-
-                org.example.observer.EventNotifier notifier = new org.example.observer.EventNotifier();
-                for (Voluntario v : usuarioDAO.listarVoluntarios()) {
-                    notifier.addObserver(v);
-                }
-                notifier.notifyObservers("Novo evento criado: " + eventoAdaptado.getNome() + " em " + eventoAdaptado.getCidade());
-            } else {
-                System.out.println("\nErro ao importar evento externo.\n");
+    
+            List<Evento> eventosExternos = new ArrayList<>();
+            eventosExternos.add(new Evento("Limpeza de Praia", "Jaraguá", "Voluntários", new ArrayList<>(), ong));
+            eventosExternos.add(new Evento("Organização da Horta", "Blumenau", "Voluntários", new ArrayList<>(), ong));
+            eventosExternos.add(new Evento("Plantio de Árvores", "Joinville", "Voluntários", new ArrayList<>(), ong));
+            eventosExternos.add(new Evento("Limpeza de Canil", "Massaranduba", "Voluntários", new ArrayList<>(), ong));
+    
+            org.example.observer.EventNotifier notifier = new org.example.observer.EventNotifier();
+            for (Voluntario v : usuarioDAO.listarVoluntarios()) {
+                notifier.addObserver(v);
             }
+    
+            for (Evento e : eventosExternos) {
+                if (eventDAO.cadastrarEvento(e)) {
+                    System.out.println("\nEvento importado com sucesso: " + e.getNome() + " em " + e.getCidade());
+    
+                    notifier.notifyObservers("Novo evento criado: " + e.getNome() + " em " + e.getCidade());
+                } else {
+                    System.out.println("\nErro ao importar evento: " + e.getNome());
+                }
+            }
+    
+            System.out.println("\n=======================================");
+            System.out.println("      EVENTOS IMPORTADOS NO SISTEMA     ");
+            System.out.println("=======================================");
+            for (Evento e : eventosExternos) {
+                System.out.println("- " + e.getNome() + " | Cidade: " + e.getCidade() + " | Público: " + e.getPublico());
+            }
+            System.out.println("=======================================\n");
+    
             return;
         }
 
