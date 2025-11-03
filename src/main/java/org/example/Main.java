@@ -10,6 +10,9 @@ import org.example.model.Evento;
 import org.example.model.Ong;
 import org.example.model.Usuario;
 import org.example.model.Voluntario;
+import org.example.observer.EventNotifier;
+import org.example.adapter.ExternalEvent;
+import org.example.adapter.EventAdapter;
 
 public class Main {
 
@@ -47,7 +50,6 @@ public class Main {
         }
     }
 
-    // -------------------- CADASTROS --------------------
     static void cadastrarVoluntario() {
         System.out.print("Nome: "); 
         String nome = sc.nextLine();
@@ -82,7 +84,6 @@ public class Main {
             System.out.println(" Erro ao cadastrar ONG.\n");
     }
 
-    // -------------------- LOGIN --------------------
     static void login() {
         System.out.print("Email: "); 
         String email = sc.nextLine();
@@ -100,7 +101,6 @@ public class Main {
         else menuAdmin(u);
     }
 
-    // -------------------- MENUS --------------------
     static void menuAdmin(Usuario admin) {
         while (true) {
             System.out.println("\n--- Menu Admin ---");
@@ -154,70 +154,98 @@ public class Main {
         }
     }
 
-    // -------------------- EVENTOS --------------------
     static void criarEvento(UsuarioDAO usuarioDAO) {
-        List<Ong> ongs = usuarioDAO.listarOngs();
-        if (ongs.isEmpty()) {
-            System.out.println("\nNenhuma ONG cadastrada!\n");
-            return;
-        }
-    
-        System.out.println("\n===========================================");
-        System.out.println("        LISTA DE ONGs CADASTRADAS          ");
-        System.out.println("===========================================\n");
-    
-        System.out.printf("%-5s | %-25s | %-30s%n", "ID", "Nome da ONG", "Email");
-        System.out.println("---------------------------------------------------------------");
-    
-        for (int i = 0; i < ongs.size(); i++) {
-            Ong ong = ongs.get(i);
-            System.out.printf("%-5d | %-25s | %-30s%n", i + 1, ong.getNome().trim(), ong.getEmail().trim());
-        }
-    
-        System.out.println("---------------------------------------------------------------");
-        System.out.println("Total de ONGs cadastradas: " + ongs.size());
-        System.out.println("---------------------------------------------------------------\n");
-    
-        System.out.print("Digite o número da ONG que vai criar o evento: ");
-        int ongEscolhidaIndex = Integer.parseInt(sc.nextLine()) - 1;
-        if (ongEscolhidaIndex < 0 || ongEscolhidaIndex >= ongs.size()) {
-            System.out.println(" ONG inválida!\n");
-            return;
-        }
-        Ong ong = ongs.get(ongEscolhidaIndex);
-    
-        System.out.println("\n===========================================");
-        System.out.println("           CADASTRO DE NOVO EVENTO         ");
-        System.out.println("===========================================\n");
-    
-        System.out.print("Nome do evento: ");
-        String nome = sc.nextLine().trim();
-        System.out.print("Cidade: ");
-        String cidade = sc.nextLine().trim();
-        System.out.print("Público-alvo: ");
-        String publico = sc.nextLine().trim();
-        System.out.println("Capacidades exigidas (separadas por vírgula): ");
-        String[] caps = sc.nextLine().split(",");
-        List<String> capacidades = new ArrayList<>();
-        for (String c : caps) capacidades.add(c.trim());
-    
-        Evento e = new Evento(nome, cidade, publico, capacidades, ong);
-        if (eventDAO.cadastrarEvento(e)) {
-            System.out.println("\n-------------------------------------------");
-            System.out.println("Evento criado com sucesso!");
-            System.out.println("\n---- Detalhes do evento ----:");
-            System.out.println("Nome: " + e.getNome());
-            System.out.println("Cidade: " + e.getCidade());
-            System.out.println("Público: " + e.getPublico());
-            System.out.println("ONG responsável: " + e.getOng().getNome());
-            System.out.println("Capacidades exigidas: " + String.join(", ", e.getCapacidades()));
-            System.out.println("-------------------------------------------\n");
+    System.out.print("\nDeseja importar um evento externo? (S/N): ");
+    String opcao = sc.nextLine().trim();
+
+    if (opcao.equalsIgnoreCase("S")) {
+        ExternalEvent ext = new ExternalEvent("Limpeza de Praia", "Jaraguá", "Voluntários");
+        Ong ong = usuarioDAO.listarOngs().get(0); 
+        Evento eventoAdaptado = new EventAdapter(ext, ong);
+
+        if (eventDAO.cadastrarEvento(eventoAdaptado)) {
+            System.out.println("\nEvento externo importado com sucesso!\n");
+
+            EventNotifier notifier = new EventNotifier();
+            for (Voluntario v : userDAO.listarVoluntarios()) {
+                notifier.addObserver(v);
+            }
+            notifier.notifyObservers("Novo evento criado: " + eventoAdaptado.getNome() + " em " + eventoAdaptado.getCidade());
+
         } else {
-            System.out.println("\nErro ao criar evento.\n");
+            System.out.println("\nErro ao importar evento externo.\n");
         }
+        return; 
     }
-    
-    
+
+    List<Ong> ongs = usuarioDAO.listarOngs();
+    if (ongs.isEmpty()) {
+        System.out.println("\nNenhuma ONG cadastrada!\n");
+        return;
+    }
+
+    System.out.println("\n===========================================");
+    System.out.println("        LISTA DE ONGs CADASTRADAS          ");
+    System.out.println("===========================================\n");
+
+    System.out.printf("%-5s | %-25s | %-30s%n", "ID", "Nome da ONG", "Email");
+    System.out.println("---------------------------------------------------------------");
+
+    for (int i = 0; i < ongs.size(); i++) {
+        Ong ong = ongs.get(i);
+        System.out.printf("%-5d | %-25s | %-30s%n", i + 1, ong.getNome().trim(), ong.getEmail().trim());
+    }
+
+    System.out.println("---------------------------------------------------------------");
+    System.out.println("Total de ONGs cadastradas: " + ongs.size());
+    System.out.println("---------------------------------------------------------------\n");
+
+    System.out.print("Digite o número da ONG que vai criar o evento: ");
+    int ongEscolhidaIndex = Integer.parseInt(sc.nextLine()) - 1;
+    if (ongEscolhidaIndex < 0 || ongEscolhidaIndex >= ongs.size()) {
+        System.out.println(" ONG inválida!\n");
+        return;
+    }
+    Ong ong = ongs.get(ongEscolhidaIndex);
+
+    System.out.println("\n===========================================");
+    System.out.println("           CADASTRO DE NOVO EVENTO         ");
+    System.out.println("===========================================\n");
+
+    System.out.print("Nome do evento: ");
+    String nome = sc.nextLine().trim();
+    System.out.print("Cidade: ");
+    String cidade = sc.nextLine().trim();
+    System.out.print("Público-alvo: ");
+    String publico = sc.nextLine().trim();
+    System.out.println("Capacidades exigidas (separadas por vírgula): ");
+    String[] caps = sc.nextLine().split(",");
+    List<String> capacidades = new ArrayList<>();
+    for (String c : caps) capacidades.add(c.trim());
+
+    Evento e = new Evento(nome, cidade, publico, capacidades, ong);
+
+    if (eventDAO.cadastrarEvento(e)) {
+        System.out.println("\n-------------------------------------------");
+        System.out.println("Evento criado com sucesso!");
+        System.out.println("\n---- Detalhes do evento ----:");
+        System.out.println("Nome: " + e.getNome());
+        System.out.println("Cidade: " + e.getCidade());
+        System.out.println("Público: " + e.getPublico());
+        System.out.println("ONG responsável: " + e.getOng().getNome());
+        System.out.println("Capacidades exigidas: " + String.join(", ", e.getCapacidades()));
+        System.out.println("-------------------------------------------\n");
+
+        EventNotifier notifier = new EventNotifier();
+        for (Voluntario v : userDAO.listarVoluntarios()) {
+            notifier.addObserver(v);
+        }
+        notifier.notifyObservers("Novo evento criado: " + e.getNome() + " em " + e.getCidade());
+
+    } else {
+        System.out.println("\nErro ao criar evento.\n");
+    }
+}
 
     static void listarEventos() {
         List<Evento> eventos = eventDAO.listarEventos();
@@ -285,7 +313,6 @@ public class Main {
         }
     }
 
-    // -------------------- INSCREVER NO EVENTO --------------------
     static void inscreverEvento(Voluntario v) {
             List<Evento> eventos = eventDAO.listarEventos();
         
@@ -326,7 +353,6 @@ public class Main {
         }
         
 
-    // -------------------- LISTAR VOLUNTÁRIOS --------------------
     static void listarVoluntarios() {
         List<Voluntario> voluntarios = userDAO.listarVoluntarios();
 
