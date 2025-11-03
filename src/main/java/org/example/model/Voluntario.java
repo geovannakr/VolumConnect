@@ -17,13 +17,34 @@ public class Voluntario extends Usuario implements Observer {
         this.id = id;
     }
 
-    public int getId() { return id; }
-    public void setId(int id) { this.id = id; }
-    public List<String> getHabilidades() { return habilidades; }
-    public void adicionarHabilidade(String h) { habilidades.add(h); }
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public List<String> getHabilidades() {
+        return habilidades;
+    }
+
+    public void adicionarHabilidade(String habilidade) {
+        habilidades.add(habilidade);
+    }
 
     @Override
     public void update(String mensagem) {
-        System.out.println("🔔 [Notificação para " + getNome() + "]: " + mensagem);
+        System.out.println("[Notificação para " + getNome() + "]: " + mensagem);
+    }
+
+    @Override
+    public String toString() {
+        return "Voluntario{" +
+                "id=" + id +
+                ", nome='" + getNome() + '\'' +
+                ", email='" + getEmail() + '\'' +
+                ", habilidades=" + habilidades +
+                '}';
     }
 }

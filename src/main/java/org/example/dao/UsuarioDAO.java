@@ -15,7 +15,6 @@ import org.example.model.Voluntario;
 
 public class UsuarioDAO {
 
-    // -------------------- CADASTRAR VOLUNTÁRIO --------------------
     public boolean cadastrarVoluntario(Voluntario v) {
         String sqlUser = "INSERT INTO usuario(nome,email,senha,tipo) VALUES (?,?,?,?)";
         String sqlHabilidade = "INSERT INTO voluntario_habilidades(voluntario_id, habilidade) VALUES (?,?)";
@@ -49,7 +48,6 @@ public class UsuarioDAO {
         }
     }
 
-    // -------------------- CADASTRAR ONG --------------------
     public boolean cadastrarOng(Ong o) {
         String sqlUser = "INSERT INTO usuario(nome,email,senha,tipo) VALUES (?,?,?,?)";
         String sqlOng = "INSERT INTO ong(usuario_id) VALUES (?)";
@@ -80,7 +78,6 @@ public class UsuarioDAO {
         }
     }
 
-    // -------------------- LOGIN --------------------
     public Usuario login(String email, String senha) {
         String sql = "SELECT nome, tipo FROM usuario WHERE email=? AND senha=?";
 
@@ -106,7 +103,6 @@ public class UsuarioDAO {
         return null;
     }
 
-    // -------------------- LISTAR ONGs --------------------
     public List<Ong> listarOngs() {
         List<Ong> ongs = new ArrayList<>();
         String sql = """
@@ -137,7 +133,6 @@ public class UsuarioDAO {
         return ongs;
     }
 
-    // -------------------- LISTAR VOLUNTÁRIOS --------------------
     public List<Voluntario> listarVoluntarios() {
         List<Voluntario> voluntarios = new ArrayList<>();
     
@@ -153,7 +148,7 @@ public class UsuarioDAO {
                     rs.getString("email"),
                     rs.getString("senha")
                 );
-                v.setId(rs.getInt("id")); // usa o id direto da tabela usuario
+                v.setId(rs.getInt("id")); 
                 voluntarios.add(v);
             }
     
@@ -163,6 +158,42 @@ public class UsuarioDAO {
     
         return voluntarios;
     }
+
+public Usuario buscarPorEmail(String email) {
+    String sql = "SELECT id, nome, email, senha, tipo FROM usuario WHERE email = ?";
+
+    try (Connection conn = DBConnection.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+        stmt.setString(1, email);
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                String nome = rs.getString("nome");
+                String senha = rs.getString("senha");
+                String tipo = rs.getString("tipo");
+                int id = rs.getInt("id");
+
+                if ("voluntario".equalsIgnoreCase(tipo)) {
+                    Voluntario v = new Voluntario(nome, rs.getString("email"), senha);
+                    v.setId(id);
+                    return v;
+                } else if ("ong".equalsIgnoreCase(tipo)) {
+                    Ong o = new Ong(nome, rs.getString("email"), senha);
+                    o.setId(id);
+                    return o;
+                } else {
+                    Usuario u = new Usuario(nome, rs.getString("email"), senha) {};
+                    return u;
+                }
+            }
+        }
+
+    } catch (SQLException e) {
+        System.out.println("Erro buscarPorEmail: " + e.getMessage());
+    }
+
+    return null; 
+}
     
 
 

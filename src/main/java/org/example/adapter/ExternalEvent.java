@@ -1,6 +1,5 @@
 package org.example.adapter;
 
-
 public class ExternalEvent {
     public String title;
     public String city;

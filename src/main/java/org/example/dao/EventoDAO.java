@@ -54,7 +54,6 @@ public class EventoDAO {
         }
     }
 
-    // -------------------- LISTAR EVENTOS --------------------
     public List<Evento> listarEventos() {
         List<Evento> eventos = new ArrayList<>();
         String sql = "SELECT e.id AS evento_id, e.nome, e.cidade, e.publico, " +
@@ -91,7 +90,6 @@ public class EventoDAO {
         return eventos;
     }
 
-    // -------------------- LISTAR EVENTOS POR CIDADE --------------------
     public List<Evento> listarEventosPorCidade(String cidade) {
         List<Evento> eventos = new ArrayList<>();
         String sql = "SELECT e.id AS evento_id, e.nome, e.cidade, e.publico, " +
@@ -131,7 +129,6 @@ public class EventoDAO {
         return eventos;
     }
 
-    // -------------------- INSCRIÇÃO --------------------
     public void inscreverVoluntario(Evento e, Voluntario v) {
         String sql = "INSERT INTO evento_voluntario(evento_id, voluntario_id) VALUES (?, ?)";
 
@@ -155,7 +152,6 @@ public class EventoDAO {
         }
     }
 
-    // -------------------- AUXILIARES --------------------
     private int getOngId(Ong ong, Connection conn) throws SQLException {
         String sql = "SELECT o.id FROM ong o JOIN usuario u ON o.usuario_id=u.id WHERE u.email=?";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {

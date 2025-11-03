@@ -1,7 +1,7 @@
 package org.example.model;
 
 public class Ong extends Usuario {
-    private int id; // 🔹 identificador da ONG (ligado à tabela ong)
+    private int id; 
 
     public Ong(String nome, String email, String senha) {
         super(nome, email, senha);
