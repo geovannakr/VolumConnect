@@ -11,10 +11,10 @@ public class DBConnection {
     private static final String PASS = "mysqlPW";
 
     private DBConnection() {
-        // construtor privado para impedir instância
+      
     }
 
-    // Sempre retorna uma NOVA conexão
+    
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASS);
     }

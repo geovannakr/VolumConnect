@@ -26,7 +26,7 @@ public class Main {
             System.out.println("--------------------------------------------------------");
             System.out.println("                   [1] Cadastrar Voluntário");
             System.out.println("                   [2] Login");
-            System.out.println("                   [0] Sair");
+            System.out.println("                   [0] Logout");
             System.out.println("--------------------------------------------------------");
             System.out.print("                  Escolha uma opção: ");
 
@@ -77,7 +77,7 @@ public class Main {
 
         Ong o = new Ong(nome, email, senha);
         if (userDAO.cadastrarOng(o)) 
-            System.out.println("\n ONG cadastrada com sucesso!\n");
+            System.out.println("\nONG cadastrada com sucesso!\n");
         else 
             System.out.println(" Erro ao cadastrar ONG.\n");
     }
@@ -107,7 +107,7 @@ public class Main {
             System.out.println("1. Cadastrar ONG");
             System.out.println("2. Listar Voluntários");
             System.out.println("0. Logout");
-            System.out.print("Escolha: ");
+            System.out.print("\nEscolha: ");
             String op = sc.nextLine();
             switch (op) {
                 case "1" -> cadastrarOng();
@@ -158,28 +158,25 @@ public class Main {
     static void criarEvento(UsuarioDAO usuarioDAO) {
         List<Ong> ongs = usuarioDAO.listarOngs();
         if (ongs.isEmpty()) {
-            System.out.println(" Nenhuma ONG cadastrada!\n");
+            System.out.println("\nNenhuma ONG cadastrada!\n");
             return;
         }
     
         System.out.println("\n===========================================");
-        System.out.println("        LISTA DE ONGs CADASTRADAS        ");
+        System.out.println("        LISTA DE ONGs CADASTRADAS          ");
         System.out.println("===========================================\n");
     
         System.out.printf("%-5s | %-25s | %-30s%n", "ID", "Nome da ONG", "Email");
-        System.out.println("---------------------------------------------------------------" +
-                           "----------------");
+        System.out.println("---------------------------------------------------------------");
     
         for (int i = 0; i < ongs.size(); i++) {
             Ong ong = ongs.get(i);
             System.out.printf("%-5d | %-25s | %-30s%n", i + 1, ong.getNome().trim(), ong.getEmail().trim());
         }
     
-        System.out.println("---------------------------------------------------------------" +
-                           "----------------");
+        System.out.println("---------------------------------------------------------------");
         System.out.println("Total de ONGs cadastradas: " + ongs.size());
-        System.out.println("---------------------------------------------------------------" +
-                           "----------------\n");
+        System.out.println("---------------------------------------------------------------\n");
     
         System.out.print("Digite o número da ONG que vai criar o evento: ");
         int ongEscolhidaIndex = Integer.parseInt(sc.nextLine()) - 1;
@@ -189,30 +186,44 @@ public class Main {
         }
         Ong ong = ongs.get(ongEscolhidaIndex);
     
+        System.out.println("\n===========================================");
+        System.out.println("           CADASTRO DE NOVO EVENTO         ");
+        System.out.println("===========================================\n");
+    
         System.out.print("Nome do evento: ");
         String nome = sc.nextLine().trim();
         System.out.print("Cidade: ");
         String cidade = sc.nextLine().trim();
-        System.out.print("Público: ");
+        System.out.print("Público-alvo: ");
         String publico = sc.nextLine().trim();
-        System.out.println("Capacidades (separadas por vírgula): ");
+        System.out.println("Capacidades exigidas (separadas por vírgula): ");
         String[] caps = sc.nextLine().split(",");
         List<String> capacidades = new ArrayList<>();
         for (String c : caps) capacidades.add(c.trim());
     
         Evento e = new Evento(nome, cidade, publico, capacidades, ong);
-        if (eventDAO.cadastrarEvento(e))
-            System.out.println(" Evento criado com sucesso!\n");
-        else
-            System.out.println(" Erro ao criar evento.\n");
+        if (eventDAO.cadastrarEvento(e)) {
+            System.out.println("\n-------------------------------------------");
+            System.out.println("Evento criado com sucesso!");
+            System.out.println("\n---- Detalhes do evento ----:");
+            System.out.println("Nome: " + e.getNome());
+            System.out.println("Cidade: " + e.getCidade());
+            System.out.println("Público: " + e.getPublico());
+            System.out.println("ONG responsável: " + e.getOng().getNome());
+            System.out.println("Capacidades exigidas: " + String.join(", ", e.getCapacidades()));
+            System.out.println("-------------------------------------------\n");
+        } else {
+            System.out.println("\nErro ao criar evento.\n");
+        }
     }
+    
     
 
     static void listarEventos() {
         List<Evento> eventos = eventDAO.listarEventos();
 
         if (eventos.isEmpty()) {
-            System.out.println("\n Nenhum evento cadastrado no momento.\n");
+            System.out.println("\nNenhum evento cadastrado no momento.\n");
             return;
         }
 
@@ -268,25 +279,52 @@ public class Main {
             return;
         }
 
-        for (Evento e : eventosFiltrados) {
-            System.out.println("Evento: " + e.getNome() + " | ONG: " + e.getOng().getNome());
+        for (int i = 0; i < eventosFiltrados.size(); i++) {
+            Evento e = eventosFiltrados.get(i);
+            System.out.printf("%d. %s | ONG: %s%n", i + 1, e.getNome(), e.getOng().getNome());
         }
     }
 
+    // -------------------- INSCREVER NO EVENTO --------------------
     static void inscreverEvento(Voluntario v) {
-        listarEventos();
-        System.out.print("Digite o nome do evento que deseja se inscrever: "); 
-        String nomeEv = sc.nextLine();
-        List<Evento> eventos = eventDAO.listarEventos();
-        for (Evento e : eventos) {
-            if (e.getNome().equalsIgnoreCase(nomeEv)) {
-                eventDAO.inscreverVoluntario(e, v);
-                System.out.println(" Inscrição realizada!\n");
+            List<Evento> eventos = eventDAO.listarEventos();
+        
+            if (eventos.isEmpty()) {
+                System.out.println("\nNenhum evento cadastrado.\n");
                 return;
             }
+        
+            System.out.println("\n===========================================");
+            System.out.println("          LISTA DE EVENTOS DISPONÍVEIS     ");
+            System.out.println("===========================================\n");
+        
+            for (int i = 0; i < eventos.size(); i++) {
+                Evento e = eventos.get(i);
+                System.out.printf("%d. %s | Cidade: %s | ONG: %s%n",
+                        i + 1, e.getNome(), e.getCidade(), e.getOng().getNome());
+            }
+        
+            System.out.println("\n-------------------------------------------");
+            System.out.print("Digite o número do evento que deseja se inscrever: ");
+            int escolha = Integer.parseInt(sc.nextLine()) - 1;
+        
+            if (escolha < 0 || escolha >= eventos.size()) {
+                System.out.println("\nEvento inválido!\n");
+                return;
+            }
+        
+            Evento eventoEscolhido = eventos.get(escolha);
+            eventDAO.inscreverVoluntario(eventoEscolhido, v);
+        
+            System.out.println("\n\n===========================================");
+            System.out.println("         INSCRIÇÃO REALIZADA COM SUCESSO   ");
+            System.out.println("===========================================\n");
+            System.out.println("Evento: " + eventoEscolhido.getNome());
+            System.out.println("Cidade: " + eventoEscolhido.getCidade());
+            System.out.println("ONG responsável: " + eventoEscolhido.getOng().getNome());
+            System.out.println("-------------------------------------------\n");
         }
-        System.out.println(" Evento não encontrado.\n");
-    }
+        
 
     // -------------------- LISTAR VOLUNTÁRIOS --------------------
     static void listarVoluntarios() {
